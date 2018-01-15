@@ -2,32 +2,58 @@ require_relative "./configs"
 require_relative "./layers/layer"
 require_relative "./layers/output_layer"
 require_relative "./layers/hidden_layer"
-require 'byebug'
 
 class Network
   attr_accessor :input_layer, :hidden_layers, :output_layer
 
-  def self.run(config)
+  def self.run(training_config: training_config)
     count, training = 0, true
-    nn = Network.new(config: config)
+    nn = Network.new(config: training_config)
+    puts "\n----------------------------------------"
+    puts "Training..."
+    puts "----------------------------------------"
     while training do
-      input, output = config.training_data.sample
+      input, output = training_config.training_data.sample
       nn.train(input, output)
-      error = nn.total_error(config.training_data)
-      puts "#{count}: #{error} - Inputs: #{input}, Output: #{output}"
+      error = nn.total_error(training_config.training_data)
+      puts "Run: #{count} - Error: #{error} - Inputs: #{input}, Output: #{output}"
       count += 1
-      training = false if error < config.error_threshold
+      training = false if error < training_config.error_threshold
     end
 
     puts "\n----------------------------------------"
-    puts "Final weights (after #{count} runs)"
+    puts "Final training weights (after #{count} runs)"
     puts "----------------------------------------"
-    puts "-- Hidden Layer --"
-    nn.hidden_layers.first.neurons.each_with_index { |n,i| puts "Neuron #{i+1}: #{n.weights}" }
+    puts "-- Input Layer --"
+    nn.input_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1} - bias: #{n.bias}" }
+    puts "\n-- Hidden Layer --"
+    nn.hidden_layers.first.neurons.each_with_index { |n,i| puts "Neuron #{i+1} - weights: #{n.weights} - bias: #{n.bias}" }
     puts "\n-- Output Layer --"
-    nn.output_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1}: #{n.weights}" }
+    nn.output_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1} - weights: #{n.weights} - bias: #{n.bias}" }
     puts "----------------------------------------\n\n"
     nn
+  end
+
+  def self.calculate(nn)
+    input_data = [1,1]
+    puts "\n----------------------------------------"
+    puts "Calculating expected output for: #{input_data}..."
+    puts "----------------------------------------"
+
+    hidden_weights = nn.hidden_layers.first.neurons.map { |n| n.weights }
+    output_weights = nn.output_layer.neurons.map { |n| n.weights }
+    config = NetworkConfig.new
+    config.input = Layer.new(quantity: 2, initial_weights: [rand,rand], bias: nn.input_layer.bias)
+    config.hidden = [ HiddenLayer.new(quantity: 5, initial_weights: hidden_weights, bias: nn.hidden_layers.first.bias)]
+    config.output = OutputLayer.new(quantity: 1, initial_weights: output_weights, bias: nn.output_layer.bias)
+    nn2 = Network.new(config: config)
+    nn2.ff([1,1])
+
+    puts "-- Output Classification --"
+    nn2.output_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1}: #{n.output}" }
+    puts "\n-- Total Error --"
+    puts nn2.total_error([[input_data,[0]]])
+    puts "----------------------------------------\n\n"
   end
 
   def initialize(config:)
@@ -39,10 +65,10 @@ class Network
   end
 
   def build_layers
-    @input_layer = Layer.new(@config.input.quantity)
+    @input_layer = @config.input || Layer.new(quantity: @config.input.quantity)
     ### Must account for multiple hidden layers ####
-    @hidden_layers = [ HiddenLayer.new(@config.hidden[0].quantity) ]
-    @output_layer = OutputLayer.new(@config.output.quantity)
+    @hidden_layers = @config.hidden || [ HiddenLayer.new(quantity: @config.hidden[0].quantity) ]
+    @output_layer = @config.output || OutputLayer.new(quantity: @config.output.quantity)
   end
 
   def ff(inputs)
@@ -81,4 +107,7 @@ class Network
   end
 end
 
-Network.run(NetworkConfig.new) if $0 == 'network.rb'
+if $0 == 'network.rb'
+  nn = Network.run(training_config: NetworkConfig.new)
+  Network.calculate(nn)
+end

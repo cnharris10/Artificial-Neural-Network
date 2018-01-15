@@ -1,5 +1,5 @@
 class Neuron
-  attr_accessor :bias, :inputs, :weights
+  attr_accessor :bias, :inputs, :output, :weights
 
   def initialize(bias = nil)
     @bias = bias
@@ -14,7 +14,7 @@ class Neuron
   def total_net_input
     total = 0
     @inputs.each_with_index do |input, index|
-      total += (input * @weights[index])
+      total += (input * @weights[index]) rescue byebug
     end
     total + @bias
   end

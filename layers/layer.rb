@@ -2,14 +2,14 @@ require_relative "../neuron"
 
 class Layer
 
-  attr_accessor :quantity, :bias, :neurons
+  attr_accessor :quantity, :initial_weights, :bias, :neurons
 
-  def initialize(quantity, bias = rand)
+  def initialize(quantity:, initial_weights: nil, bias: rand)
     # Every neuron in a layer shares the same bias
     @quantity = quantity
+    @initial_weights = initial_weights
     @bias = bias
     @neurons = []
-    @initial_weights = nil
     create_neurons
   end
 
@@ -21,23 +21,29 @@ class Layer
     from_inputs ? initialize_weights_from_inputs(obj) : initialize_weights_from_previous_layer(obj)
   end
 
-  def initialize_weights_from_inputs(inputs, from_inputs = false)
+  def initialize_weights_from_inputs(inputs)
     weight_num = 0
     @neurons.each do |h_neuron|
       inputs.times do |i|
-        h_neuron.weights.push(@initial_weights ? @initial_weights[weight_num] : rand)
-        weight_num += 1
+        h_neuron.weights.push(@initial_weights ? @initial_weights[weight_num][i] : rand)
       end
+
+      # Revisit this line
+      h_neuron.weights = h_neuron.weights.flatten.compact
+      weight_num += 1
     end
   end
 
   def initialize_weights_from_previous_layer(layer, from_inputs = false)
     weight_num = 0
-    @neurons.each do |o_neuron|
-      layer.neurons.each do |h_neuron|
+    @neurons.each_with_index do |o_neuron, o_index|
+      layer.neurons.each_with_index do |h_neuron, index|
         o_neuron.weights.push(@initial_weights ? @initial_weights[weight_num] : rand)
         weight_num += 1
       end
+
+      # Revisit this line
+      o_neuron.weights = o_neuron.weights.flatten.compact
     end
   end
 
