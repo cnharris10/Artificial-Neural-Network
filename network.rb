@@ -6,7 +6,7 @@ require_relative "./layers/hidden_layer"
 class Network
   attr_accessor :input_layer, :hidden_layers, :output_layer
 
-  def self.run(training_config: training_config)
+  def self.optimize(training_config:)
     count, training = 0, true
     nn = Network.new(config: training_config)
     puts "\n----------------------------------------"
@@ -34,25 +34,32 @@ class Network
     nn
   end
 
-  def self.calculate(nn)
-    input_data = [1,1]
+  def self.predict(training_nn)
+    random_input_output = NetworkConfig::TRAINING_DATA.sample
+    input_to_predict = random_input_output.first
+    predicted_output = random_input_output.last
     puts "\n----------------------------------------"
-    puts "Calculating expected output for: #{input_data}..."
+    puts "Calculating expected output for: #{input_to_predict}..."
     puts "----------------------------------------"
 
-    hidden_weights = nn.hidden_layers.first.neurons.map { |n| n.weights }
-    output_weights = nn.output_layer.neurons.map { |n| n.weights }
+    input_layer = training_nn.input_layer
+    hidden_layer = training_nn.hidden_layers.first
+    output_layer = training_nn.output_layer
+    hidden_weights = hidden_layer.neurons.map { |n| n.weights }
+    output_weights = output_layer.neurons.map { |n| n.weights }
+
     config = NetworkConfig.new
-    config.input = Layer.new(quantity: 2, initial_weights: [rand,rand], bias: nn.input_layer.bias)
-    config.hidden = [ HiddenLayer.new(quantity: 5, initial_weights: hidden_weights, bias: nn.hidden_layers.first.bias)]
-    config.output = OutputLayer.new(quantity: 1, initial_weights: output_weights, bias: nn.output_layer.bias)
-    nn2 = Network.new(config: config)
-    nn2.ff([1,1])
+    config.input = Layer.new(quantity: input_layer.neurons.length, initial_weights: [rand,rand], bias: input_layer.bias)
+    config.hidden = [ HiddenLayer.new(quantity: hidden_layer.neurons.length, initial_weights: hidden_weights, bias: hidden_layer.bias)]
+    config.output = OutputLayer.new(quantity: output_layer.neurons.length, initial_weights: output_weights, bias: output_layer.bias)
+
+    prediction_nn = Network.new(config: config)
+    prediction_nn.ff(input_to_predict)
 
     puts "-- Output Classification --"
-    nn2.output_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1}: #{n.output}" }
+    prediction_nn.output_layer.neurons.each_with_index { |n,i| puts "Neuron #{i+1}: #{n.output}" }
     puts "\n-- Total Error --"
-    puts nn2.total_error([[input_data,[0]]])
+    puts prediction_nn.total_error([[input_to_predict, predicted_output]])
     puts "----------------------------------------\n\n"
   end
 
@@ -108,6 +115,6 @@ class Network
 end
 
 if $0 == 'network.rb'
-  nn = Network.run(training_config: NetworkConfig.new)
-  Network.calculate(nn)
+  nn = Network.optimize(training_config: NetworkConfig.new)
+  Network.predict(nn)
 end
