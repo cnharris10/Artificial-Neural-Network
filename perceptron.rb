@@ -42,8 +42,8 @@ class NeuralNetwork
 
   def fb(input, output, ff_result)
     output_delta = (output - ff_result) * sigmoid_compliment(ff_result)
-    sigmoid_prime_delta = output_delta.dot(@weights[:output].transpose) * sigmoid_compliment(@sigmoid_product)
-    @weights[:hidden] += input.transpose.dot(sigmoid_prime_delta)
+    sigmoid_compliment_delta = output_delta.dot(@weights[:output].transpose) * sigmoid_compliment(@sigmoid_product)
+    @weights[:hidden] += input.transpose.dot(sigmoid_compliment_delta)
     @weights[:output] += @sigmoid_product.transpose.dot(output_delta)
   end
 
