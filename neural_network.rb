@@ -1,14 +1,38 @@
 require 'matrix'
 require 'nmatrix'
-require "byebug"
 
 class NeuralNetwork
-  def initialize(inputs, outputs, hidden_size)
+  def self.build(input, output, hidden_layer_size, threshold)
+    nn = NeuralNetwork.new(input, output, hidden_layer_size, threshold)
+    iteration_count = 0
+    loop do
+      loss = nn.determine_loss(iteration_count)
+      break if loss[0] < nn.threshold
+      nn.train(input, output)
+      iteration_count += 1
+    end
+    nn
+  end
+
+  attr_reader :threshold
+
+  def determine_loss(iteration_count)
+    puts "Iteration: #{iteration_count}"
+    puts "Input: #{@inputs}"
+    puts "Actual Output: #{@outputs}"
+    puts "Predicted Output: #{ff(@inputs)}"
+    loss = ((@outputs - ff(@inputs)) ** 2).mean
+    puts "Loss: #{loss}\n\n"
+    loss
+  end
+
+  def initialize(inputs, outputs, hidden_size, threshold)
     @inputs = inputs
     @outputs = outputs
+    @hiddenSize = hidden_size
+    @threshold = threshold
     @inputSize = @inputs.row(0).size
     @outputSize = @outputs.row(0).size
-    @hiddenSize = hidden_size
 
     # Produce weight matrices of same size as hidden / ouput layers
     @weights = {
@@ -50,20 +74,4 @@ class NeuralNetwork
   def train(input, output)
     fb(input, output, ff(input))
   end
-end
-
-input = N[[0.66666667, 1.0, 0.89, 0.45], [0.33333333, 0.55555556, 0.76, 0.81], [1.0, 0.66666667, 0.47, 0.68]]
-output = N[[0.92], [0.86], [0.89]]
-nn = NeuralNetwork.new(input, output, 4)
-iteration_count = 0
-loop do
-  puts "Iteration: #{iteration_count}"
-  puts "Input: #{input}"
-  puts "Actual Output: #{output}"
-  puts "Predicted Output: #{nn.ff(input)}"
-  loss = ((output - nn.ff(input)) ** 2).mean
-  puts "Loss: #{loss}\n\n" # mean sum squared loss
-  break if loss[0] < 0.0001
-  nn.train(input, output)
-  iteration_count += 1
 end
