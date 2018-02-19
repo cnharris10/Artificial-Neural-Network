@@ -4,8 +4,8 @@ Examples of multiple Artificial Neural Networks (per branch).
 
 ## Getting Started
 
-branch: **3-input-3-output-1-hidden**
-- `gem install nmatrix`
+branch: **numbers**
+- `gem install rmagick nmatrix pp descriptive_statistics`
 - `ruby main.rb`
 
 ### Prerequisites

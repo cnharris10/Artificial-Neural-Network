@@ -1,29 +1,36 @@
 require 'matrix'
 require 'nmatrix'
+require 'pp'
 
 class NeuralNetwork
-  def self.build(input, output, hidden_layer_size, threshold)
-    nn = NeuralNetwork.new(input, output, hidden_layer_size, threshold)
+  attr_reader :threshold
+
+  def self.build(inputs, outputs, hidden_layer_size, threshold)
+    nn = NeuralNetwork.new(inputs, outputs, hidden_layer_size, threshold)
     iteration_count = 0
     loop do
-      loss = nn.determine_loss(iteration_count)
-      break if loss[0] < nn.threshold
-      nn.train(input, output)
+      error = nn.determine_error(iteration_count)
+      break if error.to_a.all? { |x| x < threshold }
+      nn.train(inputs, outputs)
       iteration_count += 1
     end
     nn
   end
 
-  attr_reader :threshold
-
-  def determine_loss(iteration_count)
-    puts "Iteration: #{iteration_count}"
-    puts "Input: #{@inputs}"
-    puts "Actual Output: #{@outputs}"
-    puts "Predicted Output: #{ff(@inputs)}"
-    loss = ((@outputs - ff(@inputs)) ** 2).mean
-    puts "Loss: #{loss}\n\n"
-    loss
+  def determine_error(iteration_count)
+    if iteration_count % 100 == 0
+      pp "Iteration: #{iteration_count}"
+      puts "Results"
+      pp @outputs
+      puts "\nPredicted Result"
+      pp ff(@inputs)
+    end
+    error = ((@outputs - ff(@inputs)) ** 2).mean
+    if iteration_count % 100 == 0
+      pp "Error: #{error}"
+      puts "\n\n\n"
+    end
+    error
   end
 
   def initialize(inputs, outputs, hidden_size, threshold)
